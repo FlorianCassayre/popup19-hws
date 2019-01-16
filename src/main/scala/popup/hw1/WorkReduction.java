@@ -23,22 +23,27 @@ public class WorkReduction
 
                 // --
 
-                int[] costs = new int[n - m + 1];
-                costs[costs.length - 1] = 0;
-                for(int k = 0; k < costs.length - 1; k++)
-                    costs[k] = Integer.MAX_VALUE;
-                for(int k = costs.length - 1; k >= 0; k--)
-                {
-                    final int currentCost = costs[k];
-                    final int unitIndex = k - 1, halfIndex = (k + m) / 2 - m;
+                // Should work on most cases, if not all, but is very efficient (in fact it is logarithmic in the
+                // worst-case scenario, and tends to be constant in practice) compared to the previous dynamic programming
+                // approach that was linear.
 
-                    if(unitIndex >= 0)
-                        costs[unitIndex] = Math.min(currentCost + priceUnit, costs[unitIndex]);
-                    if(halfIndex >= 0)
-                        costs[halfIndex] = Math.min(currentCost + priceHalf, costs[halfIndex]);
+                int work = n, cost = 0;
+                while(work > m)
+                {
+                    final int halved = work / 2;
+                    if(halved >= m && priceUnit * (work - halved) >= priceHalf) // Still cheaper (and possible) to halve
+                    {
+                        cost += priceHalf;
+                        work = halved;
+                    }
+                    else // Otherwise reach the goal with unit steps (can be computed directly)
+                    {
+                        cost += priceUnit * (work - m);
+                        work = m;
+                    }
                 }
 
-                final int optimalCost = costs[0]; // TODO
+                final int optimalCost = cost;
 
                 // --
 

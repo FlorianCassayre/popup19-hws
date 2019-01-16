@@ -1,23 +1,23 @@
 package popup.hw1;
 
 import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 public class FerryLoading
 {
     public static void main(String[] args)
     {
         final Scanner scanner = new Scanner(System.in);
-        final int c = scanner.nextInt();
+        final int c = Integer.parseInt(scanner.nextLine());
         for(int i = 0; i < c; i++)
         {
-            final int n = scanner.nextInt(), t = scanner.nextInt(), m = scanner.nextInt();
+            final String[] params = scanner.nextLine().split(" ");
+            final int n = Integer.parseInt(params[0]), t = Integer.parseInt(params[1]), m = Integer.parseInt(params[2]);
             final Deque<Car> left = new ArrayDeque<>(), right = new ArrayDeque<>();
             for(int j = 0; j < m; j++)
             {
-                final int time = scanner.nextInt();
-                final String directionString = scanner.next();
+                final String[] carpar = scanner.nextLine().split(" ");
+                final int time = Integer.parseInt(carpar[0]);
+                final String directionString = carpar[1];
                 final boolean direction;
                 if(directionString.equals("left"))
                 {
@@ -83,7 +83,8 @@ public class FerryLoading
                 System.out.println(arrivals[j]);
             }
 
-            System.out.println();
+            if(i < c - 1)
+                System.out.println();
         }
 
         scanner.close();

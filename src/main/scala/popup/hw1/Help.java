@@ -19,6 +19,8 @@ public class Help
             else
                 System.out.println("-");
         }
+
+        scanner.close();
     }
 
     private static String firstMatch(String sa, String sb)

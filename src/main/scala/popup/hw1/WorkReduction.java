@@ -23,30 +23,22 @@ public class WorkReduction
 
                 // --
 
-                int bestCost = Integer.MAX_VALUE;
-                final Map<Integer, Integer> costs = new HashMap<>(), temp = new HashMap<>();
-                costs.put(n, 0);
-                while(!costs.isEmpty())
+                int[] costs = new int[n - m + 1];
+                costs[costs.length - 1] = 0;
+                for(int k = 0; k < costs.length - 1; k++)
+                    costs[k] = Integer.MAX_VALUE;
+                for(int k = costs.length - 1; k >= 0; k--)
                 {
-                    for(Map.Entry<Integer, Integer> entry : costs.entrySet())
-                    {
-                        if(entry.getKey() > m) // Branch
-                        {
-                            temp.merge(entry.getKey() - 1, entry.getValue() + priceUnit, Integer::min);
-                            temp.merge(entry.getKey() / 2, entry.getValue() + priceHalf, Integer::min);
-                        }
-                        else if(entry.getKey() == m) // Goal achieved
-                        {
-                            bestCost = Math.min(entry.getValue(), bestCost);
-                        } // Otherwise ignore
-                    }
+                    final int currentCost = costs[k];
+                    final int unitIndex = k - 1, halfIndex = (k + m) / 2 - m;
 
-                    costs.clear();
-                    costs.putAll(temp);
-                    temp.clear();
+                    if(unitIndex >= 0)
+                        costs[unitIndex] = Math.min(currentCost + priceUnit, costs[unitIndex]);
+                    if(halfIndex >= 0)
+                        costs[halfIndex] = Math.min(currentCost + priceHalf, costs[halfIndex]);
                 }
 
-                final int optimalCost = bestCost;
+                final int optimalCost = costs[0]; // TODO
 
                 // --
 

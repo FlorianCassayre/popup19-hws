@@ -30,57 +30,83 @@ public class Help
         if(patternA.length != patternB.length) // Short circuit
             return null;
 
-        final Map<String, String> mapA = new HashMap<>(), mapB = new HashMap<>();
+        final Set<Group> graph = new HashSet<>();
 
         for(int j = 0; j < patternA.length; j++)
         {
             final String a = patternA[j], b = patternB[j];
             final String ta = extractTag(a), tb = extractTag(b);
 
-            if(ta == null && tb == null)
-            {
-                if(!a.equals(b))
-                    return null;
-            }
-            else if(ta != null && tb == null)
-            {
-                mapA.putIfAbsent(ta, b);
-                if(!b.equals(mapA.get(ta)))
-                    return null;
-            }
-            else if(ta == null && tb != null)
-            {
-                mapB.putIfAbsent(tb, a);
-                if(!a.equals(mapB.get(tb)))
-                    return null;
-            }
-            else
-            {
-                final String ma = mapA.get(ta), mb = mapB.get(tb);
-                if(ma != null && mb == null)
-                    mapB.put(tb, ma);
-                else if(ma == null && mb != null)
-                    mapA.put(ta, mb);
-                else if(ma != null && mb != null && !ma.equals(mb))
-                    return null;
-            }
+            if(ta == null && tb == null && !a.equals(b))
+                return null;
+
+            final Group group = new Group();
+            group.value = ta == null ? a : (tb == null ? b : null);
+            if(ta != null)
+                group.constraints.add(new TagConstraint(false, ta));
+            if(tb != null)
+                group.constraints.add(new TagConstraint(true, tb));
+
+            if(!graphAdd(graph, group))
+                return null;
         }
 
         final List<String> builder = new ArrayList<>(patternA.length);
 
         for(int i = 0; i < patternA.length; i++)
         {
-            final String a = patternA[i], tag = extractTag(a), get = mapA.get(tag);
+            final String a = patternA[i], tag = extractTag(a);
 
             if(tag == null)
                 builder.add(a);
-            else if(get != null)
-                builder.add(get);
             else
-                builder.add("*");
+            {
+                Group group = null;
+                for(Group g : graph)
+                {
+                    final TagConstraint c = new TagConstraint(false, tag);
+                    if(g.constraints.contains(c))
+                    {
+                        group = g;
+                        break;
+                    }
+                }
+                builder.add(group.value != null ? group.value : "any");
+            }
         }
 
         return builder.stream().collect(Collectors.joining(" "));
+    }
+
+    private static boolean graphAdd(Set<Group> graph, Group group)
+    {
+        final Iterator<Group> it = graph.iterator();
+        while(it.hasNext())
+        {
+            final Group g = it.next();
+            boolean contains = false;
+            for(TagConstraint c : g.constraints)
+            {
+                if(group.constraints.contains(c))
+                {
+                    contains = true;
+                    break;
+                }
+            }
+            if(contains)
+            {
+                if(g.value != null && group.value != null && !g.value.equals(group.value))
+                        return false;
+                group.value = g.value != null ? g.value : group.value;
+                group.constraints.addAll(g.constraints);
+
+                it.remove();
+            }
+        }
+
+        graph.add(group);
+
+        return true;
     }
 
     private static String extractTag(String string)
@@ -89,5 +115,37 @@ public class Help
             return string.substring(1, string.length() - 1);
         else
             return null;
+    }
+
+    private static class Group
+    {
+        public String value = null;
+        public final Set<TagConstraint> constraints = new HashSet<>();
+    }
+
+    private static class TagConstraint
+    {
+        public final boolean map;
+        public final String tag;
+        public TagConstraint(boolean map, String tag)
+        {
+            this.map = map;
+            this.tag = tag;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if(this == o) return true;
+            if(o == null || getClass() != o.getClass()) return false;
+            TagConstraint that = (TagConstraint) o;
+            return map == that.map && Objects.equals(tag, that.tag);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(map, tag);
+        }
     }
 }

@@ -23,7 +23,16 @@ class HelpSuite extends ProblemSuite(Help.main) {
       |<a> abc <b> hij <c> klm <e>
       |<a> <b> def hij <d> <e> <e>
       |""".stripMargin)(
-    """* abc def hij * klm klm
+    """any abc def hij any klm klm
+      |""".stripMargin)
+
+  testSample(
+    """1
+      |<a> abc def <b>
+      |<b> <b> <c> <c>
+      |""".stripMargin
+  )(
+    """abc abc def def
       |""".stripMargin)
 
 }

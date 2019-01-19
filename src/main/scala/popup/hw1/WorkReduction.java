@@ -76,7 +76,10 @@ public class WorkReduction
         @Override
         public int compareTo(Agency that)
         {
-            return Integer.compare(this.optimalCost, that.optimalCost);
+            if(this.optimalCost != that.optimalCost)
+                return Integer.compare(this.optimalCost, that.optimalCost);
+            else
+                return this.name.compareTo(that.name);
         }
     }
 }

@@ -64,10 +64,13 @@ public class FerryLoading
                     }
                     else // Wait until a car arrives (jump in time)
                     {
-                        if(!that.isEmpty())
+                        if(!that.isEmpty() && !other.isEmpty()) {
+                            time = Math.min(that.peek().arrivalTime, other.peek().arrivalTime);
+                        } else if(!that.isEmpty()) {
                             time = that.peek().arrivalTime;
-                        if(!other.isEmpty())
-                            time = Math.min(time, other.peek().arrivalTime);
+                        } else if(!other.isEmpty()) {
+                            time = other.peek().arrivalTime;
+                        }
                     }
                 }
                 else

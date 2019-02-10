@@ -63,13 +63,17 @@ public class Equations {
     }
 
     private static void fill(BigRational[] matrix, String equation) {
-        final String[] split = equation.split(" ");
+        final String[] split = equation.split("\\s+");
 
         boolean sign = false;
+        boolean invert = false;
         for(int i = 0; i < split.length; i++) {
             final String s = split[i];
             if(s.equals("=")) {
                 sign = true;
+                invert = false;
+            } else if(s.equals("-")) {
+                invert = true;
             } else if(!s.equals("+")) {
                 final char last = s.charAt(s.length() - 1);
                 String head = s.substring(0, s.length() - 1);
@@ -87,8 +91,9 @@ public class Equations {
                     j = 2;
                     add = BigRational.ZERO.subtract(BigRational.valueOf(Integer.parseInt(s)));
                 }
-                final BigRational signed = sign ? BigRational.ZERO.subtract(add) : add;
+                final BigRational signed = (sign ^ invert) ? BigRational.ZERO.subtract(add) : add;
                 matrix[j] = matrix[j].add(signed);
+                invert = false;
             }
         }
     }

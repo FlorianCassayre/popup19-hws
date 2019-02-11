@@ -26,14 +26,6 @@ public class RationalRatio {
         scanner.close();
     }
 
-    private static long nines(int n) {
-        int r = 0;
-        for(int i = 0; i < n; i++) {
-            r = r * 10 + 9;
-        }
-        return r;
-    }
-
     /**
      * Representation of an arbitrarily big rational number.
      */

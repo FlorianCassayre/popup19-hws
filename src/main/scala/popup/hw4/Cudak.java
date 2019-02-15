@@ -35,7 +35,42 @@ public class Cudak {
 
         System.out.println(firstSolution);
 
+        final long secondSolution = toLong(smallestSum(a, b.length, s));
+
+        System.out.println(secondSolution);
+
         scanner.close();
+    }
+
+    private static int[] smallestSum(int[] a, int len, int s) {
+        int[] solution = new int[len];
+        for(int i = 0; i < a.length; i++)
+            solution[len - a.length + i] = a[i];
+        int i = 0;
+        int sum;
+        while((sum = sum(solution)) > s || sum + i * (TEN - 1) + (TEN - 1 - solution[len - i - 1]) < s) {
+            overflow(solution, i);
+            i++;
+        }
+
+        int left = s - sum;
+
+        for(int j = 0; j <= i; j++) {
+            final int take = Math.max(Math.min(left, TEN - 1), 0);
+            solution[len - j - 1] += take;
+            left -= take;
+        }
+
+        return solution;
+    }
+
+    private static void overflow(int[] a, int i) {
+        int j = a.length - i - 1;
+        a[j] = 0;
+        do {
+            j--;
+            a[j] = (a[j] + 1) % TEN;
+        } while(a[j] == 0);
     }
 
     private static long sumBelow(int[] a, int s, long[][] combinations) {
@@ -58,6 +93,14 @@ public class Cudak {
         for(int i = 0; i < array.length; i++)
             array[i] = s.charAt(i) - '0';
         return array;
+    }
+
+    private static long toLong(int[] a) {
+        long acc = 0;
+        for(int i = 0; i < a.length; i++) {
+            acc = (acc * TEN) + a[i];
+        }
+        return acc;
     }
 
     private static int sum(int[] array) {

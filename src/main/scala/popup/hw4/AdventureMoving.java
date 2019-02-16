@@ -1,7 +1,6 @@
 package popup.hw4;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -14,11 +13,11 @@ public class AdventureMoving {
 
         final int distance = scanner.nextInt();
         final List<Station> stations = new ArrayList<>();
-        stations.add(new Station(0, 10000));
+        stations.add(new Station(0, 10000000));
         while(scanner.hasNext()) {
             stations.add(new Station(scanner.nextInt(), scanner.nextInt()));
         }
-        stations.add(new Station(distance, 10000));
+        stations.add(new Station(distance, 10000000));
 
         // --
 
@@ -38,7 +37,7 @@ public class AdventureMoving {
                 for(int k = i - 1; k >= 0; k--) {
                     final Station before = stations.get(k);
                     final int difference = station.distance - before.distance;
-                    if(j >= tankVolume - difference)
+                    if(j > tankVolume - difference)
                         break;
 
                     final int cost = costs[k][j + difference];

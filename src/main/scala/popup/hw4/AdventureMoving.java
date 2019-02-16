@@ -13,11 +13,11 @@ public class AdventureMoving {
 
         final int distance = scanner.nextInt();
         final List<Station> stations = new ArrayList<>();
-        stations.add(new Station(0, 10000000));
+        stations.add(new Station(0, 0));
         while(scanner.hasNext()) {
             stations.add(new Station(scanner.nextInt(), scanner.nextInt()));
         }
-        stations.add(new Station(distance, 10000000));
+        stations.add(new Station(distance, 0));
 
         // --
 
@@ -34,22 +34,19 @@ public class AdventureMoving {
             for(int j = 0; j <= tankVolume; j++) {
                 int min = Integer.MAX_VALUE;
 
-                for(int k = i - 1; k >= 0; k--) {
-                    final Station before = stations.get(k);
-                    final int difference = station.distance - before.distance;
-                    if(j > tankVolume - difference)
-                        break;
-
-                    final int cost = costs[k][j + difference];
+                final Station before = stations.get(i - 1);
+                final int difference = station.distance - before.distance;
+                if(j <= tankVolume - difference) {
+                    final int cost = costs[i - 1][j + difference];
                     if(cost != Integer.MAX_VALUE) {
                         min = Math.min(cost, min);
                     }
                 }
 
-                for(int k = 0; k < j; k++) {
-                    final int cost = costs[i][k];
+                if(i != stations.size() - 1 && j > 0) { // Last case is special
+                    final int cost = costs[i][j - 1];
                     if(cost != Integer.MAX_VALUE)
-                        min = Math.min(cost + station.price * (j - k), min);
+                        min = Math.min(cost + station.price, min);
                 }
 
                 costs[i][j] = min;

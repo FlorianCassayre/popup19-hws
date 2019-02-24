@@ -56,19 +56,26 @@ public class Bicikli {
             }
         }
 
-        while(!s.isEmpty()) {
+        final List<Queue<Edge>> copy = new ArrayList<>(n);
+        for(int i = 0; i < n; i++)
+            copy.add(new ArrayDeque<>(adjacency.get(i)));
+
+        while(!s.isEmpty()) { // FIXME
             final int node = s.poll();
             bitSet.clear(node);
             sorted.add(node);
-            while(!adjacency.get(node).isEmpty()) {
-                final Edge edge = adjacency.get(node).poll();
-                incoming[edge.v]--;
-                if(incoming[edge.v] == 0 && !bitSet.get(edge.v)) {
-                    s.add(edge.v);
-                    bitSet.set(edge.v);
+            while(!copy.get(node).isEmpty()) {
+                final Edge edge = copy.get(node).poll();
+                if(involved.contains(edge.v)) {
+                    incoming[edge.v]--;
+                    if(incoming[edge.v] == 0 && !bitSet.get(edge.v)) {
+                        s.add(edge.v);
+                        bitSet.set(edge.v);
+                    }
                 }
             }
         }
+
         boolean dag = true;
         for(int i = 0; i < incoming.length; i++) {
             if(incoming[i] != 0) {
@@ -81,7 +88,8 @@ public class Bicikli {
         distances[start] = 1;
         for(Integer v : sorted) {
             for(Edge edge : adjacencyOpp.get(v)) {
-                distances[edge.u] = (distances[edge.u] + distances[edge.v] * edge.weight) % MOD;
+                final int u = edge.v;
+                distances[v] = (distances[v] + distances[u] * edge.weight) % MOD;
             }
         }
 
@@ -124,6 +132,21 @@ public class Bicikli {
             this.u = u;
             this.v = v;
             this.weight = weight;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(this == o)
+                return true;
+            if(o == null || getClass() != o.getClass())
+                return false;
+            Edge edge = (Edge) o;
+            return u == edge.u && v == edge.v && weight == edge.weight;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(u, v, weight);
         }
     }
 }

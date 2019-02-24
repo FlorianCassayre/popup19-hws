@@ -1,6 +1,5 @@
 package popup.hw5;
 
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -13,26 +12,81 @@ public class Bicikli {
 
         final int n = scanner.nextInt(), m = scanner.nextInt();
 
-        final List<BellmanFord.Edge> edges = new ArrayList<>(m);
+        final List<Edge> dupEdges = new ArrayList<>(m);
 
         for(int i = 0; i < m; i++) {
-            edges.add(new BellmanFord.Edge(scanner.nextInt() - 1, scanner.nextInt() - 1, 0));
+            dupEdges.add(new Edge(scanner.nextInt() - 1, scanner.nextInt() - 1, 0));
         }
 
-        final Map<BellmanFord.Edge, List<BellmanFord.Edge>> grouped = edges.stream().collect(Collectors.groupingBy(e -> e));
+        final Map<Edge, List<Edge>> grouped = dupEdges.stream().collect(Collectors.groupingBy(e -> e));
 
-        final List<BellmanFord.Edge> weighted = new ArrayList<>(grouped.size());
-        for(List<BellmanFord.Edge> e : grouped.values()) {
-            final BellmanFord.Edge repr = e.get(0);
-            weighted.add(new BellmanFord.Edge(repr.u, repr.v, e.size()));
+        final List<Edge> weighted = new ArrayList<>(grouped.size());
+        for(List<Edge> e : grouped.values()) {
+            final Edge repr = e.get(0);
+            weighted.add(new Edge(repr.u, repr.v, e.size()));
+        }
+
+        final List<Queue<Edge>> adjacency = new ArrayList<>(n), adjacencyOpp = new ArrayList<>(n);
+        for(int i = 0; i < n; i++) {
+            adjacency.add(new LinkedList<>());
+            adjacencyOpp.add(new LinkedList<>());
+        }
+        for(Edge edge : weighted) {
+            adjacency.get(edge.u).add(edge);
+            adjacencyOpp.get(edge.v).add(new Edge(edge.v, edge.u, edge.weight));
         }
 
         final int start = 0, end = 1;
 
-        final BigInteger[] solution = BellmanFord.shortestPath(n, weighted, start);
+        final Set<Integer> involved = bfs(start, adjacency);
+        involved.retainAll(bfs(end, adjacencyOpp));
 
-        final long count = solution[end].mod(BigInteger.valueOf(MOD)).longValue();
-        if(solution[end].signum() >= 0) {
+        final Queue<Integer> sorted = new ArrayDeque<>();
+        final Queue<Integer> s = new ArrayDeque<>();
+        final BitSet bitSet = new BitSet(n);
+        final int[] incoming = new int[n];
+        for(Integer u : involved) {
+            if(adjacencyOpp.get(u).isEmpty()) { // No incoming edges
+                s.add(u);
+                bitSet.set(u);
+            }
+            for(Edge edge : adjacency.get(u)) {
+                if(involved.contains(edge.v))
+                    incoming[edge.v]++;
+            }
+        }
+
+        while(!s.isEmpty()) {
+            final int node = s.poll();
+            bitSet.clear(node);
+            sorted.add(node);
+            while(!adjacency.get(node).isEmpty()) {
+                final Edge edge = adjacency.get(node).poll();
+                incoming[edge.v]--;
+                if(incoming[edge.v] == 0 && !bitSet.get(edge.v)) {
+                    s.add(edge.v);
+                    bitSet.set(edge.v);
+                }
+            }
+        }
+        boolean dag = true;
+        for(int i = 0; i < incoming.length; i++) {
+            if(incoming[i] != 0) {
+                dag = false;
+                break;
+            }
+        }
+
+        final long[] distances = new long[n];
+        distances[start] = 1;
+        for(Integer v : sorted) {
+            for(Edge edge : adjacencyOpp.get(v)) {
+                distances[edge.u] = (distances[edge.u] + distances[edge.v] * edge.weight) % MOD;
+            }
+        }
+
+        final long count = distances[end];
+        if(dag) {
             if(count % DIGITS != count)
                 System.out.println(String.format("%09d" , count % DIGITS));
             else
@@ -43,99 +97,33 @@ public class Bicikli {
         scanner.close();
     }
 
-    private static final class BellmanFord {
-        private BellmanFord() {}
-
-        /**
-         * Computes all the shortest paths from a single source.
-         * Negative weights are allowed, and negative cycle will be detected.
-         * @param n the number of vertices
-         * @param edges the edges
-         * @param s the source vertex
-         * @return a solution containing the costs and the paths;
-         * a distance of <code>Integer.MAX_VALUE</code> indicates an impossible path
-         * while <code>Integer.MIN_VALUE</code> means that the cost of the path can be
-         * made arbitrarily low. The paths are stored in a tree
-         */
-        public static BigInteger[] shortestPath(int n, List<Edge> edges, int s) {
-            BigInteger[] distances = new BigInteger[n];
-
-            // Initialization
-            for(int i = 0; i < n; i++) {
-                distances[i] = BigInteger.ZERO;
-            }
-
-            distances[s] = BigInteger.ONE; // Source
-
-            Set<Integer> positive = new HashSet<>();
-            final BitSet visitedCycles = new BitSet();
-
-            // Relaxation
-            for(int i = 0; i <= n; i++) {
-                BigInteger[] temp = new BigInteger[n];
-                for(Edge edge : edges) {
-                    final BigInteger product = distances[edge.u].multiply(BigInteger.valueOf(edge.weight));
-                    temp[edge.v] = (temp[edge.v] != null ? temp[edge.v] : BigInteger.ZERO).add(product);
-                }
-                for(int j = 0; j < n; j++) {
-                    if(i == n) { // Perform one more iteration to locate the vertices affected by negative cycles
-                        if(temp[j] != null && temp[j].compareTo(distances[j]) > 0) {
-                            positive.add(j);
-                            visitedCycles.set(j);
-                        }
+    private static Set<Integer> bfs(int start, List<Queue<Edge>> adjacency) {
+        final Set<Integer> visited = new HashSet<>();
+        List<Integer> current = new ArrayList<>();
+        current.add(start);
+        visited.add(start);
+        while(!current.isEmpty()) {
+            final List<Integer> temp = new ArrayList<>();
+            for(Integer u : current) {
+                for(Edge edge : adjacency.get(u)) {
+                    if(!visited.contains(edge.v)) {
+                        temp.add(edge.v);
+                        visited.add(edge.v);
                     }
-                    if(temp[j] != null && temp[j].compareTo(distances[j]) > 0)
-                        distances[j] = temp[j];
                 }
             }
-
-            final Map<Integer, List<Integer>> adjacency = new HashMap<>();
-            for(int i = 0; i < n; i++)
-                adjacency.put(i, new ArrayList<>());
-            for(Edge edge : edges)
-                adjacency.get(edge.u).add(edge.v);
-
-            // Negative cycles
-            while(!positive.isEmpty()) { // BFS
-                final Set<Integer> temp = new HashSet<>();
-                for(Integer u : positive) {
-                    distances[u] = BigInteger.valueOf(-1);
-                    for(Integer v : adjacency.get(u))
-                        if(!visitedCycles.get(v)) {
-                            temp.add(v);
-                            visitedCycles.set(v);
-                        }
-                }
-                positive = temp;
-            }
-
-            return distances;
+            current = temp;
         }
+        return visited;
+    }
 
-        public static final class Edge {
-            public final int u, v;
-            public final int weight;
+    private static final class Edge {
+        public final int u, v, weight;
 
-            public Edge(int u, int v, int weight) {
-                this.u = u;
-                this.v = v;
-                this.weight = weight;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if(this == o)
-                    return true;
-                if(o == null || getClass() != o.getClass())
-                    return false;
-                Edge edge = (Edge) o;
-                return u == edge.u && v == edge.v && weight == edge.weight;
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(u, v, weight);
-            }
+        private Edge(int u, int v, int weight) {
+            this.u = u;
+            this.v = v;
+            this.weight = weight;
         }
     }
 }

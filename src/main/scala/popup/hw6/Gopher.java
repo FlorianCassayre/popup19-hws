@@ -6,41 +6,45 @@ public class Gopher {
     private static final int SCALE = 10;
     public static void main(String[] args) {
         final Scanner scanner = new Scanner(System.in);
-        scanner.useLocale(Locale.US);
 
         // => Max-flow problem!
 
-        final int n = scanner.nextInt(), m = scanner.nextInt(), s = scanner.nextInt(), v = scanner.nextInt();
-        final int distanceLimitSq = sq(s * v * SCALE);
+        while(scanner.hasNextInt()) {
 
-        final List<Point> sources = new ArrayList<>(n), sinks = new ArrayList<>(m);
-        for(int i = 0; i < n; i++)
-            sources.add(readPoint(scanner));
-        for(int i = 0; i < m; i++)
-            sinks.add(readPoint(scanner));
+            final String[] ints = scanner.nextLine().split(" ");
+            final int n = Integer.parseInt(ints[0]), m = Integer.parseInt(ints[1]), s = Integer.parseInt(ints[2]), v = Integer.parseInt(ints[3]);
+            final int distanceLimitSq = sq(s * v * SCALE);
 
-        final List<FlowSolver.Edge> edges = new ArrayList<>();
-        final int source = n + m, sink = source + 1;
-        for(int i = 0; i < n; i++) // Link the source to all the gophers
-            edges.add(new FlowSolver.Edge(source, i, 1));
-        for(int i = 0; i < n; i++) // Link all the gopher to the holes they can reach
-            for(int j = 0; j < m; j++)
-                if(sources.get(i).distanceSq(sinks.get(j)) <= distanceLimitSq)
-                    edges.add(new FlowSolver.Edge(i, n + j, 1));
-        for(int i = 0; i < m; i++) // Link all the the holes to the sink
-            edges.add(new FlowSolver.Edge(n + i, sink, 1));
+            final List<Point> sources = new ArrayList<>(n), sinks = new ArrayList<>(m);
+            for(int i = 0; i < n; i++)
+                sources.add(readPoint(scanner));
+            for(int i = 0; i < m; i++)
+                sinks.add(readPoint(scanner));
 
-        final FlowSolver.Solution solution = new FlowSolver(n + m + 2, edges, source, sink).maximumFlow();
+            final List<FlowSolver.Edge> edges = new ArrayList<>();
+            final int source = n + m, sink = source + 1;
+            for(int i = 0; i < n; i++) // Link the source to all the gophers
+                edges.add(new FlowSolver.Edge(source, i, 1));
+            for(int i = 0; i < n; i++) // Link all the gopher to the holes they can reach
+                for(int j = 0; j < m; j++)
+                    if(sources.get(i).distanceSq(sinks.get(j)) <= distanceLimitSq)
+                        edges.add(new FlowSolver.Edge(i, n + j, 1));
+            for(int i = 0; i < m; i++) // Link all the the holes to the sink
+                edges.add(new FlowSolver.Edge(n + i, sink, 1));
 
-        final long vulnerable = n - solution.f;
+            final FlowSolver.Solution solution = new FlowSolver(n + m + 2, edges, source, sink).maximumFlow();
 
-        System.out.println(vulnerable);
+            final long vulnerable = n - solution.f;
+
+            System.out.println(vulnerable);
+        }
 
         scanner.close();
     }
 
     private static Point readPoint(Scanner scanner) {
-        return new Point(Math.round(scanner.nextFloat() * SCALE), Math.round(scanner.nextFloat() * SCALE));
+        final String[] line = scanner.nextLine().split(" ");
+        return new Point(Math.round(Float.parseFloat(line[0]) * SCALE), Math.round(Float.parseFloat(line[1]) * SCALE));
     }
 
     private static int sq(int x) {
@@ -61,6 +65,7 @@ public class Gopher {
     }
 
     private static class FlowSolver {
+
         private final int n;
         private final int s, t;
         private final long[][] capacities, flows;
@@ -100,7 +105,8 @@ public class Gopher {
                 long oldHeight = height[u];
                 discharge(u);
                 if(height[u] > oldHeight) {
-                    queue.addFirst(queue.removeLast()); // FIFO selection rule
+                    it.remove();
+                    queue.addFirst(u); // Relabel-to-front selection rule
                     it = queue.iterator();
                 }
             }
@@ -112,19 +118,17 @@ public class Gopher {
             final long send = Math.min(excess[u], capacities[u][v] - flows[u][v]);
             flows[u][v] += send;
             flows[v][u] -= send;
-            if(excess[u] < Long.MAX_VALUE)
-                excess[u] -= send;
-            if(excess[v] < Long.MAX_VALUE)
-                excess[v] += send;
+            excess[u] -= send;
+            excess[v] += send;
         }
 
         private void relabel(int u) {
-            long minHeight = Long.MAX_VALUE;
+            long min = Long.MAX_VALUE;
             for(int v = 0; v < n; v++)
                 if(capacities[u][v] - flows[u][v] > 0) {
-                    minHeight = Math.min(minHeight, height[v]);
-                    if(minHeight < Long.MAX_VALUE)
-                        height[u] = minHeight + 1;
+                    min = Math.min(min, height[v]);
+                    if(min < Long.MAX_VALUE)
+                        height[u] = min + 1;
                 }
         }
 
@@ -155,13 +159,8 @@ public class Gopher {
                 this.flow = new ArrayList<>();
                 for(int u = 0; u < n; u++)
                     for(int v = 0; v < n; v++)
-                        if(flows[u][v] > 0) {
-                            if(flows[u][v] > capacities[u][v])
-                                throw new IllegalStateException();
-                            if(flows[v][u] > 0)
-                                throw new IllegalStateException();
+                        if(flows[u][v] > 0)
                             this.flow.add(new Edge(u, v, flows[u][v]));
-                        }
                 Collections.sort(flow);
             }
         }

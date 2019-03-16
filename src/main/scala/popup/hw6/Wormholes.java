@@ -86,7 +86,8 @@ public class Wormholes {
             distances[s] = 0; // Source
 
             // Relaxation
-            for(int i = 0; i < n; i++) // FIXME
+            while(true) {
+                boolean updated = false;
                 for(int u = 0; u < n; u++) {
                     for(int v = 0; v < n; v++) {
                         if(distances[u] < Integer.MAX_VALUE) {
@@ -94,10 +95,14 @@ public class Wormholes {
                             final int weight = adjacency[u][v];
                             if(travelStart + weight < distances[v]) {
                                 distances[v] = distances[u] + weight;
+                                updated = true;
                             }
                         }
                     }
                 }
+                if(!updated)
+                    break;
+            }
 
             return distances;
         }

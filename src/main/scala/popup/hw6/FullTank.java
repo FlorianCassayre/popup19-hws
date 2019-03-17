@@ -16,6 +16,7 @@ public class FullTank {
         for(int i = 0; i < m; i++) {
             final int u = scanner.nextInt(), v = scanner.nextInt(), d = scanner.nextInt();
             edges.add(new Dijkstra.Edge(u, v, d));
+            edges.add(new Dijkstra.Edge(v, u, d));
         }
         final int q = scanner.nextInt();
         for(int i = 0; i < q; i++) {
@@ -52,10 +53,10 @@ public class FullTank {
             for(Edge edge : edges)
                 adjacency.get(edge.u).add(edge);
 
-            final int[][] distances = new int[n][c + 1];
+            final int[][] costs = new int[n][c + 1];
             for(int i = 0; i < n; i++)
                 for(int j = 0; j <= c; j++)
-                    distances[i][j] = Integer.MAX_VALUE;
+                    costs[i][j] = Integer.MAX_VALUE;
 
             final PriorityQueue<Vertex> queue = new PriorityQueue<>();
 
@@ -64,42 +65,40 @@ public class FullTank {
             while(!queue.isEmpty()) {
                 final Vertex vertex = queue.poll();
 
-                if(vertex.distance < distances[vertex.v][vertex.c]) {
-                    for(int i = vertex.c; i <= c; i++) {
-                        distances[vertex.v][i] = vertex.distance + (i - vertex.c) * prices[vertex.v]; // FIXME?
+                if(vertex.v == e)
+                    return vertex.cost;
+
+                if(vertex.cost < costs[vertex.v][vertex.gas]) {
+                        costs[vertex.v][vertex.gas] = vertex.cost;
+
+                        if(vertex.gas < c)
+                            queue.add(new Vertex(vertex.v, vertex.cost + prices[vertex.v], vertex.gas + 1));
 
                         for(Edge edge : adjacency.get(vertex.v)) {
-                            if(edge.weight <= i) { // Enough gas
-                                queue.add(new Vertex(edge.v, distances[vertex.v][i], i - edge.weight));
+                            if(edge.weight <= vertex.gas) { // Enough gas
+                                queue.add(new Vertex(edge.v, vertex.cost, vertex.gas - edge.weight));
                             }
-
                         }
-                    }
-
                 }
             }
 
-            int min = Integer.MAX_VALUE;
-            for(int i = 0; i <= c; i++) {
-                min = Math.min(distances[e][i], min);
-            }
-            return min;
+            return Integer.MAX_VALUE;
         }
 
         private static final class Vertex implements Comparable<Vertex> {
             private final int v;
-            private final int distance;
-            private final int c;
+            private final int cost;
+            private final int gas;
 
-            private Vertex(int v, int distance, int c) {
+            private Vertex(int v, int cost, int gas) {
                 this.v = v;
-                this.distance = distance;
-                this.c = c;
+                this.cost = cost;
+                this.gas = gas;
             }
 
             @Override
             public int compareTo(Vertex that) {
-                return Integer.compare(this.distance, that.distance);
+                return Integer.compare(this.cost, that.cost);
             }
         }
 
@@ -107,12 +106,6 @@ public class FullTank {
             public final int u, v;
             public final int weight;
 
-            /**
-             * Constructor for a regular weighted directed edge.
-             * @param u the source vertex
-             * @param v the destination vertex
-             * @param weight the weight
-             */
             public Edge(int u, int v, int weight) {
                 this.u = u;
                 this.v = v;

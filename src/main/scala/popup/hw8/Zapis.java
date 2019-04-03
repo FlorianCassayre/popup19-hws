@@ -3,7 +3,7 @@ package popup.hw8;
 import java.util.*;
 
 public class Zapis {
-    private static final long MOD = 100_000;
+    private static final long MOD = 1_000_000, MOD_DISP = 100_000;
     private static final String OPENING = "([{", CLOSING = ")]}";
     private static final Map<Character, Character> OPPOSITE = Collections.unmodifiableMap(new HashMap<Character, Character>() {{
         for(int i = 0; i < OPENING.length(); i++)
@@ -22,7 +22,12 @@ public class Zapis {
 
         final long result = recurrence(0, n, string, cache);
 
-        System.out.println(result);
+        if(result % MOD_DISP == result) {
+            System.out.println(result);
+        } else {
+            final String str = String.valueOf(result);
+            System.out.println(str.substring(1));
+        }
 
         scanner.close();
     }

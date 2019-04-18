@@ -103,7 +103,7 @@ public class ProgrammingTeamSelection {
                         newDone.set(triple.a);
                         newDone.set(triple.b);
                         newDone.set(triple.c);
-                        if(isPossible2(copy, newDone, n, goal - 1))
+                        if(isPossible2(copy, newDone, n, goal - count))
                             return true;
                     }
                 }

@@ -15,48 +15,43 @@ public class Hash {
 
         final int firstHalf = n / 2, secondHalf = n - firstHalf;
 
-        final int[][] counts1 = new int[firstHalf + 1][mask + 1];
-
-        List<Integer> prevs = new ArrayList<>();
-        prevs.add(0);
-        counts1[0][0] = 1;
+        int[] count1 = new int[mask + 1], count2 = new int[mask + 1];
+        count1[0] = 1;
 
         for(int i = 1; i <= firstHalf; i++) {
-            List<Integer> temp = new ArrayList<>();
-            for(Integer p : prevs) {
-                final int q = (33 * p) & mask;
-                for(int j = 1; j <= 26; j++) {
-                    final int v = q ^ j;
-                    if(counts1[i][v] == 0)
-                        temp.add(v);
-                    counts1[i][v] += counts1[i - 1][p];
+            int[] next = new int[mask + 1];
+            for(int p = 0; p <= mask; p++) {
+                if(count1[p] != 0) {
+                    final int q = (33 * p) & mask;
+                    for(int j = 1; j <= 26; j++) {
+                        final int v = q ^ j;
+                        next[v] += count1[p];
+                    }
                 }
             }
-            prevs = temp;
+            count1 = next;
         }
 
         final ModularArithmetic group = new ModularArithmetic(mask + 1);
+        final int inverse = (int) group.inverse(33);
 
-        final int[][] counts2 = new int[secondHalf + 1][mask + 1];
-        prevs = new ArrayList<>();
-        prevs.add(k);
-        counts2[0][k] = 1;
+        count2[k] = 1;
         for(int i = 1; i <= secondHalf; i++) {
-            List<Integer> temp = new ArrayList<>();
-            for(Integer p : prevs) {
-                for(int j = 1; j <= 26; j++) {
-                    final int v = (int) group.divide(p ^ j, 33);
-                    if(counts2[i][v] == 0)
-                        temp.add(v);
-                    counts2[i][v] += counts2[i - 1][p];
+            int[] next = new int[mask + 1];
+            for(int p = 0; p <= mask; p++) {
+                if(count2[p] != 0) {
+                    for(int j = 1; j <= 26; j++) {
+                        final int v = ((p ^ j) * inverse) & mask;
+                        next[v] += count2[p];
+                    }
                 }
             }
-            prevs = temp;
+            count2 = next;
         }
 
         long total = 0;
         for(int i = 0; i <= mask; i++) {
-            total += counts1[firstHalf][i] * counts2[secondHalf][i];
+            total += count1[i] * count2[i];
         }
 
         System.out.println(total);
@@ -76,21 +71,6 @@ public class Hash {
                 throw new IllegalArgumentException();
 
             this.n = n;
-        }
-
-        /**
-         * Divides two numbers in this group, if possible.
-         * In other words, multiplies <code>a</code> by the modular inverse of <code>b</code>.
-         * @param a the first number
-         * @param b the second number
-         * @return the result of the division if it exists, or <code>-1</code> otherwise
-         */
-        public long divide(long a, long b) {
-            final long inv = inverse(b);
-            if(inv != -1)
-                return (a * inv) % n;
-            else
-                return inv;
         }
 
         /**

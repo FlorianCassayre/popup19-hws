@@ -1,9 +1,10 @@
 package popup.hw10;
 
-import java.math.BigInteger;
 import java.util.*;
 
 public class BigPainting {
+
+    private static final long M = 3037000493L, B = 3, BI = 1012333498;
 
     public static void main(String[] args) {
         final Scanner scanner = new Scanner(System.in);
@@ -13,41 +14,50 @@ public class BigPainting {
 
 
         final boolean[][] pattern = new boolean[hp][wp];
-        final BigInteger[] patternBi = new BigInteger[hp];
-        parseArray(scanner, pattern, patternBi);
+        parseArray(scanner, pattern);
 
         final boolean[][] array = new boolean[hm][wm];
-        final BigInteger[] arrayBi = new BigInteger[hm];
-        parseArray(scanner, array, arrayBi);
+        parseArray(scanner, array);
 
         int id = 1;
-        final Map<BigInteger, Integer> map = new HashMap<>();
+        final Map<Long, Integer> map = new HashMap<>();
         final int[] column = new int[hp];
-        for(int i = 0; i < patternBi.length; i++) {
-            final BigInteger bi = patternBi[i];
-            if(!map.containsKey(bi))
-                map.put(bi, id++);
-            column[i] = map.get(bi);
-        }
+        for(int i = 0; i < pattern.length; i++) {
+            final boolean[] pat = pattern[i];
+            long hash = 0;
+            long b = 1;
+            for(int j = 0; j < pat.length; j++) {
+                hash = (hash + (pat[j] ? 2 : 1) * b) % M;
+                b = (b * B) % M;
+            }
 
-        final BigInteger mask = BigInteger.ZERO.setBit(wp).subtract(BigInteger.ONE);
+            if(!map.containsKey(hash))
+                map.put(hash, id++);
+            column[i] = map.get(hash);
+        }
 
         final int[][] matches = new int[wm - wp + 1][hm];
         for(int i = 0; i < hm; i++) {
-            BigInteger acc = arrayBi[i];
-            for(int j = 0; j <= wm - wp; j++) {
-                final BigInteger key = acc.and(mask);
-
-                final Integer val = map.get(key);
-                if(val != null)
-                    matches[j][i] = val;
-                acc = acc.shiftRight(1);
+            final boolean[] arr = array[i];
+            long hash = 0;
+            long b = 1;
+            for(int j = 0; j < wp; j++) {
+                hash = (hash + (arr[j] ? 2 : 1) * b) % M;
+                b = (b * B) % M;
+            }
+            for(int j = 0; j < matches.length; j++) {
+                final Integer value = map.get(hash);
+                if(value != null)
+                    matches[j][i] = value;
+                if(j < matches.length - 1)
+                    hash = ((((hash - (arr[j] ? 2 : 1) + (arr[wp + j] ? 2 : 1) * b) * BI) % M) + M) % M;
             }
         }
 
         int total = 0;
+        final int[] table = SubstringSearch.buildTable(column);
         for(int[] arr : matches) {
-            total += SubstringSearch.find(arr, column).size();
+            total += SubstringSearch.find(arr, column, table).size();
         }
 
         System.out.println(total);
@@ -55,28 +65,15 @@ public class BigPainting {
         scanner.close();
     }
 
-    private static void parseArray(Scanner scanner, boolean[][] array, BigInteger[] arrayBi) {
+    private static void parseArray(Scanner scanner, boolean[][] array) {
         final char x = 'x';
 
         for(int i = 0; i < array.length; i++) {
             final String s = scanner.nextLine();
-            BigInteger bi = BigInteger.ZERO;
             for(int j = 0; j < array[i].length; j++) {
                 final boolean b = s.charAt(j) == x;
                 array[i][j] = b;
-                if(b)
-                    bi = bi.setBit(j);
             }
-            arrayBi[i] = bi;
-        }
-    }
-
-    private static final class Matcher {
-        private final boolean[][] patterns, array;
-
-        private Matcher(boolean[][] patterns, boolean[][] array) {
-            this.patterns = patterns;
-            this.array = array;
         }
     }
 
@@ -89,11 +86,10 @@ public class BigPainting {
          * @param pattern the needle
          * @return all indices where the pattern starts
          */
-        public static List<Integer> find(int[] text, int[] pattern) {
+        public static List<Integer> find(int[] text, int[] pattern, int[] table) {
             // Knuth–Morris–Pratt algorithm
 
             final List<Integer> occurrences = new ArrayList<>();
-            final int[] table = buildTable(pattern);
 
             int j = 0, k = 0;
             while(j < text.length) {
@@ -116,7 +112,7 @@ public class BigPainting {
             return occurrences;
         }
 
-        private static int[] buildTable(int[] pattern) {
+        public static int[] buildTable(int[] pattern) {
             // KMP requires a table of partial matches
 
             final int[] table = new int[pattern.length + 1];
